@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# 环境与密钥
+.env
+*.local
+
+# 运行产物
+/storage/
+/logs/
+*.db
+*.sqlite3
+*.dump
+*.log
+
+# 本地模型（声纹等），仅忽略根目录 models，不影响 app/models
+/models/
+
+# 编辑器
+.idea/
+.vscode/
+.DS_Store

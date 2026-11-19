@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>{{ type_label }} {{ report.period_start }} 至 {{ report.period_end }}</title>
+<style>
+body{font-family:"Microsoft YaHei",sans-serif;max-width:960px;margin:32px auto;padding:0 16px;color:#1f2937;line-height:1.7}
+h1{font-size:22px;margin-bottom:4px}
+h2{font-size:17px;margin-top:28px;border-left:4px solid #2563eb;padding-left:8px}
+table{border-collapse:collapse;width:100%;margin:12px 0}
+th,td{border:1px solid #e5e7eb;padding:6px 10px;text-align:left;font-size:14px}
+th{background:#f3f4f6}
+.meta{color:#6b7280;font-size:13px}
+.note{color:#92400e;background:#fef3c7;padding:8px 12px;border-radius:4px;font-size:13px}
+.mock{color:#991b1b;background:#fee2e2;padding:8px 12px;border-radius:4px;font-weight:600}
+</style>
+</head>
+<body>
+<h1>{{ type_label }}</h1>
+<p class="meta">统计区间：{{ report.period_start }} 至 {{ report.period_end }}　
+对比区间：{% if report.compare_start %}{{ report.compare_start }} 至 {{ report.compare_end }}{% else %}无数据{% endif %}</p>
+{% if is_mock %}<p class="mock">本报告包含模拟数据，仅供参考，不得用于对外披露。</p>{% endif %}
+
+<h2>一、工单概览</h2>
+<table>
+<tr><th>指标</th><th>本区间</th></tr>
+<tr><td>新建工单</td><td>{{ work_orders.total }}</td></tr>
+<tr><td>完成工单</td><td>{{ work_orders.completed }}</td></tr>
+<tr><td>完成率</td><td>{{ work_orders.completion_rate if work_orders.completion_rate is not none else '该数据有缺失，请人工核实' }}</td></tr>
+<tr><td>平均处理时长（分钟）</td><td>{{ work_orders.avg_process_minutes if work_orders.avg_process_minutes is not none else '该数据有缺失，请人工核实' }}</td></tr>
+<tr><td>超时工单</td><td>{{ work_orders.overdue }}</td></tr>
+<tr><td>超时率</td><td>{{ work_orders.overdue_rate if work_orders.overdue_rate is not none else '该数据有缺失，请人工核实' }}</td></tr>
+</table>
+<table>
+<tr><th>类别</th><th>数量</th></tr>
+{% for row in category_rows %}
+<tr><td>{{ row.label }}</td><td>{{ row.count }}</td></tr>
+{% endfor %}
+</table>
+<table>
+<tr><th>状态</th><th>数量</th></tr>
+{% for row in status_rows %}
+<tr><td>{{ row.label }}</td><td>{{ row.count }}</td></tr>
+{% endfor %}
+</table>
+
+<h2>二、业务与财务</h2>
+<table>
+<tr><th>指标</th><th>金额</th><th>数据来源</th></tr>
+<tr><td>销售收入</td><td>{{ sales.sales_amount }} 元</td><td>{{ sources.sales_summary }}</td></tr>
+<tr><td>采购金额</td><td>{{ purchase.purchase_amount }} 元</td><td>{{ sources.purchase_summary }}</td></tr>
+<tr><td>收入</td><td>{{ finance.revenue }} 元</td><td>{{ sources.finance_summary }}</td></tr>
+<tr><td>成本</td><td>{{ finance.cost }} 元</td><td>{{ sources.finance_summary }}</td></tr>
+<tr><td>毛利</td><td>{{ finance.gross_profit }} 元</td><td>{{ sources.finance_summary }}</td></tr>
+<tr><td>毛利率</td><td>{% if finance.gross_margin is not none %}{{ finance.gross_margin }}%{% else %}无数据（分母为 0）{% endif %}</td><td>{{ sources.finance_summary }}</td></tr>
+<tr><td>净利</td><td>{{ finance.net_profit }} 元</td><td>{{ sources.finance_summary }}</td></tr>
+<tr><td>应收 / 应付</td><td>{{ finance.receivable }} / {{ finance.payable }} 元</td><td>{{ sources.finance_summary }}</td></tr>
+<tr><td>资金余额</td><td>{{ finance.cash_balance }} 元</td><td>{{ sources.finance_summary }}</td></tr>
+</table>
+
+<h2>三、库存与采购销售</h2>
+<table>
+<tr><th>指标</th><th>吨数</th><th>数据来源</th></tr>
+<tr><td>期末结存</td><td>{{ inventory.closing_quantity }} 吨</td><td>{{ sources.inventory_summary }}</td></tr>
+<tr><td>期间入库</td><td>{{ inventory.inbound_quantity }} 吨</td><td>{{ sources.inventory_summary }}</td></tr>
+<tr><td>期间出库</td><td>{{ inventory.outbound_quantity }} 吨</td><td>{{ sources.inventory_summary }}</td></tr>
+<tr><td>周转率</td><td>{{ inventory.turnover if inventory.turnover is not none else '无数据（分母为 0）' }}</td><td>{{ sources.inventory_summary }}</td></tr>
+<tr><td>损耗</td><td>{{ inventory.natural_loss }} 吨</td><td>{{ sources.inventory_summary }}</td></tr>
+</table>
+
+<h2>四、异常预警</h2>
+<table>
+<tr><th>级别</th><th>本区间数量</th></tr>
+<tr><td>严重</td><td>{{ alerts.critical }}</td></tr>
+<tr><td>警告</td><td>{{ alerts.warning }}</td></tr>
+<tr><td>提示</td><td>{{ alerts.info }}</td></tr>
+</table>
+
+{% if trend %}
+<h2>五、趋势与对比</h2>
+<table>
+<tr><th>指标</th><th>本区间</th><th>对比区间</th><th>变化</th></tr>
+<tr><td>新建工单</td><td>{{ work_orders.total }} 件</td><td>{{ compare.work_orders_total }}</td><td>{{ compare.work_orders_delta }}</td></tr>
+<tr><td>销售收入</td><td>{{ sales.sales_amount }} 元</td><td>{{ compare.sales_amount }}</td><td>{{ compare.sales_delta }}</td></tr>
+<tr><td>毛利率</td><td>{% if finance.gross_margin is not none %}{{ finance.gross_margin }}%{% else %}无数据{% endif %}</td><td>{{ compare.gross_margin }}</td><td>{{ compare.margin_delta }}</td></tr>
+</table>
+<table>
+<tr><th>区间</th><th>新建</th><th>完成</th><th>超时</th></tr>
+{% for item in trend["items"] %}
+<tr><td>{{ item.period }}</td><td>{{ item.created }}</td><td>{{ item.completed }}</td><td>{{ item.overdue }}</td></tr>
+{% endfor %}
+</table>
+{% endif %}
+
+<h2>{{ '六' if trend else '五' }}、结论</h2>
+<ul>
+{% for line in conclusions %}
+<li>{{ line }}</li>
+{% endfor %}
+</ul>
+
+<p class="meta">市场分析：无数据来源。本报告仅含聚合指标，不含单据明细与可下钻链接。</p>
+</body>
+</html>

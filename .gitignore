@@ -1,0 +1,40 @@
+# 环境与密钥
+.env
+.env.*
+!.env.example
+*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# 运行产物
+/ticket-agent/storage/
+/ticket-agent/logs/
+*.log
+*.db
+*.sqlite3
+*.dump
+
+# 本地模型，仅忽略 ticket-agent 根目录下的 models，不影响 app/models
+/ticket-agent/models/
+
+# 前端
+/ticket-web/node_modules/
+/ticket-web/dist/
+.vite/
+
+# 本地与个人文件
+/docs/
+/数据/
+/backup/
+/.screenshots/
+/.trae/
+.idea/
+.vscode/
+.DS_Store

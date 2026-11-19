@@ -1,0 +1,76 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: ticket-postgres
+    environment:
+      POSTGRES_USER: ticket
+      POSTGRES_PASSWORD: ticket
+      POSTGRES_DB: ticket
+      TZ: Asia/Shanghai
+    ports:
+      # 5432 落在 Windows 保留端口段，宿主改用 15432
+      - "15432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ticket -d ticket"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7
+    container_name: ticket-redis
+    ports:
+      # 6379 落在 Windows 保留端口段，宿主改用 16379
+      - "16379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # 本地 CosyVoice2 TTS。首次启动会下载 iic/CosyVoice2-0.5B 到 ./models
+  cosyvoice:
+    build:
+      context: ./services/cosyvoice
+    container_name: ticket-cosyvoice
+    environment:
+      COSYVOICE_MODEL_DIR: /models/CosyVoice2-0.5B
+      COSYVOICE_MODEL_ID: iic/CosyVoice2-0.5B
+      COSYVOICE_FP16: "0"
+      COSYVOICE_MAX_CHARS: "500"
+      MODELSCOPE_CACHE: /models/.cache
+      TZ: Asia/Shanghai
+    ports:
+      # 50000 落在 Windows 保留端口段，宿主改用 15000
+      - "15000:50000"
+    volumes:
+      - ./models:/models
+    # 没有 NVIDIA GPU 或 Docker GPU 透传不可用时，删掉下面 deploy 段，退回 CPU 推理
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:50000/health', timeout=3)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 30
+      start_period: 900s
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
